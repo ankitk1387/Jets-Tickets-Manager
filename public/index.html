@@ -214,6 +214,13 @@ select.namesel{width:100%; background:var(--panel-2); border:1px solid var(--lin
 .priority-count{font-family:'IBM Plex Mono',monospace; color:var(--muted); font-size:12px;}
 .priority-badge{font-size:9px; text-transform:uppercase; letter-spacing:0.06em; background:var(--green-deep); color:var(--green-bright); padding:2px 7px; border-radius:10px; margin-left:8px;}
 
+.season-badge{
+  display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em;
+  text-transform:uppercase; padding:3px 9px; border-radius:10px; margin-left:8px; vertical-align:middle;
+}
+.season-badge.pre{background:#f2dcaa; color:#6b5215; border:1px solid var(--brass);}
+.season-badge.reg{background:#bfe8d3; color:#0f5236; border:1px solid var(--green-bright);}
+
 .footer-note{text-align:center; color:var(--muted); font-size:11px; margin-top:30px; letter-spacing:0.03em;}
 .privacy-note{background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px 16px; font-size:12px; color:var(--muted); margin-bottom:16px; line-height:1.5;}
 
@@ -235,14 +242,18 @@ select.namesel{width:100%; background:var(--panel-2); border:1px solid var(--lin
 
 <script>
 const JETS_2026_HOME_GAMES = [
-  {opponent:'Green Bay Packers', date:'2026-09-20', time:'13:00'},
-  {opponent:'Cleveland Browns', date:'2026-10-11', time:'13:00'},
-  {opponent:'Miami Dolphins', date:'2026-10-25', time:'13:00'},
-  {opponent:'Las Vegas Raiders', date:'2026-11-01', time:'13:00'},
-  {opponent:'Buffalo Bills', date:'2026-11-15', time:'13:00'},
-  {opponent:'Denver Broncos', date:'2026-12-13', time:'13:00'},
-  {opponent:'New England Patriots', date:'2026-12-27', time:'13:00'},
-  {opponent:'Minnesota Vikings', date:'2027-01-03', time:'13:00'},
+  {opponent:'Green Bay Packers', date:'2026-09-20', time:'13:00', season:'reg'},
+  {opponent:'Cleveland Browns', date:'2026-10-11', time:'13:00', season:'reg'},
+  {opponent:'Miami Dolphins', date:'2026-10-25', time:'13:00', season:'reg'},
+  {opponent:'Las Vegas Raiders', date:'2026-11-01', time:'13:00', season:'reg'},
+  {opponent:'Buffalo Bills', date:'2026-11-15', time:'13:00', season:'reg'},
+  {opponent:'Denver Broncos', date:'2026-12-13', time:'13:00', season:'reg'},
+  {opponent:'New England Patriots', date:'2026-12-27', time:'13:00', season:'reg'},
+  {opponent:'Minnesota Vikings', date:'2027-01-03', time:'13:00', season:'reg'},
+];
+const JETS_2026_PRESEASON_HOME_GAMES = [
+  {opponent:'Tampa Bay Buccaneers', date:'2026-08-14', time:'19:00', season:'pre'},
+  {opponent:'New York Giants', date:'2026-08-28', time:'19:30', season:'pre'},
 ];
 
 const SEASON_KEY_ROSTER = 'roster';
@@ -410,17 +421,21 @@ function renderSetup(){
   <div class="card">
     <h2>② Home games</h2>
     <p class="helptext">Add each home game — opponent, date, kickoff time. Editable later from Admin.</p>
-    <button class="ghost" style="margin-bottom:12px;" onclick="loadJetsSchedule()">⚡ Load 2026 Jets home schedule (all 8, 1:00 PM)</button>
+    <button class="ghost" style="margin-bottom:12px;" onclick="loadJetsSchedule()">⚡ Load 2026 Jets schedule (2 preseason + 8 regular)</button>
     <div class="row">
       <input type="text" id="oppInput" placeholder="Opponent (e.g. Bills)">
       <input type="date" id="dateInput">
       <input type="time" id="timeInput" value="13:00">
+      <select class="namesel" id="seasonInput" style="flex:0 0 150px;">
+        <option value="reg">Regular season</option>
+        <option value="pre">Preseason</option>
+      </select>
     </div>
     <button class="primary" style="margin-top:10px;" onclick="addDraftGame()">Add game</button>
     <div style="margin-top:14px;">
       ${setupDraft.games.map((g,i)=>`
         <div class="chip" style="width:100%; justify-content:space-between; border-radius:8px;">
-          <span>Game ${i+1} · vs ${escapeHtml(g.opponent)} · ${fmtDate(g.date)} · ${fmtTime(g.time)}</span>
+          <span>Game ${i+1} · vs ${escapeHtml(g.opponent)} · ${fmtDate(g.date)} · ${fmtTime(g.time)} ${g.season==='pre' ? '<span class="season-badge pre">Preseason</span>' : ''}</span>
           <button onclick="removeDraftGame(${i})">✕</button>
         </div>`).join('')}
     </div>
@@ -454,16 +469,17 @@ function addDraftGame(){
   const opp = document.getElementById('oppInput').value.trim();
   const date = document.getElementById('dateInput').value;
   const time = document.getElementById('timeInput').value || '13:00';
+  const season = document.getElementById('seasonInput').value || 'reg';
   if(!opp || !date){ uiError='Add an opponent and date for the game.'; render(); return; }
   uiError='';
-  setupDraft.games.push({id:uid(), opponent:opp, date, time, tradeFlag:false, assignment:{seat1:null, seat2:null, parking:null}});
+  setupDraft.games.push({id:uid(), opponent:opp, date, time, season, tradeFlag:false, claimed:false, assignment:{seat1:null, seat2:null, parking:null}});
   document.getElementById('oppInput').value=''; document.getElementById('dateInput').value='';
   render();
 }
 function loadJetsSchedule(){
-  JETS_2026_HOME_GAMES.forEach(g=>{
-    if(!setupDraft.games.some(x=>x.opponent.toLowerCase()===g.opponent.toLowerCase())){
-      setupDraft.games.push({id:uid(), opponent:g.opponent, date:g.date, time:g.time, tradeFlag:false, assignment:{seat1:null, seat2:null, parking:null}});
+  [...JETS_2026_PRESEASON_HOME_GAMES, ...JETS_2026_HOME_GAMES].forEach(g=>{
+    if(!setupDraft.games.some(x=>x.opponent.toLowerCase()===g.opponent.toLowerCase() && x.date===g.date)){
+      setupDraft.games.push({id:uid(), opponent:g.opponent, date:g.date, time:g.time, season:g.season, tradeFlag:false, claimed:false, assignment:{seat1:null, seat2:null, parking:null}});
     }
   });
   render();
@@ -545,22 +561,26 @@ function renderFriend(){
     const iHaveSeat2 = a.seat2===friendName;
     const iHaveParking = a.parking===friendName;
     const bothFilled = !!(a.seat1 && a.seat2);
+    const iHoldNothing = !iHaveSeat1 && !iHaveSeat2;
 
     let stampHtml;
     if(g.tradeFlag) stampHtml = `<div class="stamp trade">Trading back</div>`;
     else if(iHaveSeat1 || iHaveSeat2) stampHtml = `<div class="stamp mine">You're in!</div>`;
+    else if(g.claimed) stampHtml = `<div class="stamp filled">Claimed</div>`;
     else if(bothFilled) stampHtml = `<div class="stamp filled">Filled</div>`;
     else stampHtml = `<div class="stamp open">Open</div>`;
 
     const myStatus = statusOf(g.id, friendName);
+    const seasonBadge = g.season==='pre' ? '<span class="season-badge pre">Preseason</span>' : '<span class="season-badge reg">Regular season</span>';
+    const greyed = g.claimed && iHoldNothing;
 
     out += `
-    <div class="stub">
+    <div class="stub" style="${greyed ? 'opacity:0.55;' : ''}">
       <div class="stub-main">
-        <div class="game-num">GAME ${idx+1} OF ${games.length}</div>
+        <div class="game-num">GAME ${idx+1} OF ${games.length}${seasonBadge}</div>
         <div class="opponent">vs ${escapeHtml(g.opponent)}</div>
         <div class="gamedate">${fmtDate(g.date)} · ${fmtTime(g.time)}</div>
-        <div class="seat-line">${(iHaveSeat1||iHaveSeat2) ? `You have a seat for this one 🎟` : (bothFilled ? 'Both seats are spoken for' : 'Seats still open')}</div>
+        <div class="seat-line">${(iHaveSeat1||iHaveSeat2) ? `You have a seat for this one 🎟` : (g.claimed ? 'This game is fully claimed' : (bothFilled ? 'Both seats are spoken for' : 'Seats still open'))}</div>
         ${iHaveParking ? `<div class="seat-line">The parking pass is yours for this game 🚗</div>` : ''}
         <div class="status-btns">
           <button class="status-btn in ${myStatus==='in'?'selected':''}" onclick="setStatus('${g.id}','in')">I'm in</button>
@@ -662,11 +682,11 @@ function renderAdmin(){
 
   <div class="card">
     <h2>Response summary</h2>
-    <p class="helptext">Everyone's status per game at a glance — click a row to jump down and assign seats.</p>
+    <p class="helptext">Everyone's status per game at a glance — click a row to jump down and assign seats. Tick "Claimed" if a game is fully spoken for outside the app (e.g. someone's bringing their own +1 and covering parking) — that greys the game out for everyone else instead of you having to fill in every slot.</p>
     <div style="overflow-x:auto;">
       <table class="summary-table">
         <thead>
-          <tr><th>Game</th><th>In</th><th>Maybe</th><th>Can't go</th><th>Status</th></tr>
+          <tr><th>Game</th><th>In</th><th>Maybe</th><th>Can't go</th><th>Status</th><th>Claimed</th></tr>
         </thead>
         <tbody>
           ${games.map(g=>{
@@ -677,21 +697,26 @@ function renderAdmin(){
             const a = g.assignment || {};
             let statusLabel, statusColor;
             if(g.tradeFlag){ statusLabel='Trading back'; statusColor='var(--muted)'; }
+            else if(g.claimed){ statusLabel='Claimed'; statusColor='var(--green-bright)'; }
             else if(a.seat1 && a.seat2){ statusLabel='Filled'; statusColor='var(--green-bright)'; }
             else if(ins.length===0){ statusLabel='No takers'; statusColor='var(--rust)'; }
             else{ statusLabel='Open'; statusColor='var(--brass)'; }
             return `
             <tr onclick="jumpToGame('${g.id}')">
               <td>
-                <span class="summary-game-link">vs ${escapeHtml(g.opponent)}</span><br>
+                <span class="summary-game-link">vs ${escapeHtml(g.opponent)}</span>
+                ${g.season==='pre' ? '<span class="season-badge pre">Pre</span>' : ''}<br>
                 <span class="mono" style="font-size:11px; color:var(--muted);">${fmtDate(g.date)}</span>
               </td>
               <td>${ins.length ? escapeHtml(ins.join(', ')) : '<span style="color:var(--muted);">—</span>'}</td>
               <td>${maybes.length ? escapeHtml(maybes.join(', ')) : '<span style="color:var(--muted);">—</span>'}</td>
               <td>${outs.length ? escapeHtml(outs.join(', ')) : '<span style="color:var(--muted);">—</span>'}</td>
               <td><span style="color:${statusColor}; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.04em;">${statusLabel}</span></td>
+              <td onclick="event.stopPropagation();">
+                <input type="checkbox" ${g.claimed?'checked':''} onclick="toggleClaimed('${g.id}', this.checked)" style="width:16px; height:16px; cursor:pointer;">
+              </td>
             </tr>`;
-          }).join('') || `<tr><td colspan="5"><span class="helptext">No games yet.</span></td></tr>`}
+          }).join('') || `<tr><td colspan="6"><span class="helptext">No games yet.</span></td></tr>`}
         </tbody>
       </table>
     </div>
@@ -722,11 +747,15 @@ function renderAdmin(){
 
   <div class="card">
     <h2>Add a game</h2>
-    <button class="ghost" style="margin-bottom:12px;" onclick="loadJetsScheduleLive()">⚡ Load 2026 Jets home schedule (fills in any missing of the 8)</button>
+    <button class="ghost" style="margin-bottom:12px;" onclick="loadJetsScheduleLive()">⚡ Load 2026 Jets schedule (fills in any missing of the 10)</button>
     <div class="row">
       <input type="text" id="aOpp" placeholder="Opponent">
       <input type="date" id="aDate">
       <input type="time" id="aTime" value="13:00">
+      <select class="namesel" id="aSeason" style="flex:0 0 150px;">
+        <option value="reg">Regular season</option>
+        <option value="pre">Preseason</option>
+      </select>
     </div>
     <button class="primary" style="margin-top:10px;" onclick="addGameLive()">Add game</button>
   </div>
@@ -743,16 +772,18 @@ function renderAdmin(){
 
     let stampHtml;
     if(g.tradeFlag) stampHtml = `<div class="stamp trade">Trading back</div>`;
+    else if(g.claimed) stampHtml = `<div class="stamp filled">Claimed</div>`;
     else if(a.seat1 && a.seat2) stampHtml = `<div class="stamp filled">Filled</div>`;
     else if(ins.length===0) stampHtml = `<div class="stamp needsfill">No takers</div>`;
     else stampHtml = `<div class="stamp open">Open</div>`;
 
     const isOpen = expandedGame === g.id;
+    const seasonBadgeAdmin = g.season==='pre' ? '<span class="season-badge pre">Preseason</span>' : '<span class="season-badge reg">Regular season</span>';
 
     out += `
     <div class="stub" id="game-${g.id}">
       <div class="stub-main">
-        <div class="game-num">GAME ${idx+1} OF ${games.length}</div>
+        <div class="game-num">GAME ${idx+1} OF ${games.length}${seasonBadgeAdmin}</div>
         <div class="opponent">vs ${escapeHtml(g.opponent)}</div>
         <div class="gamedate">${fmtDate(g.date)} · ${fmtTime(g.time)} · ${ins.length} in / ${maybes.length} maybe / ${outs.length} out</div>
 
@@ -799,6 +830,10 @@ function renderAdmin(){
         <label class="trade-toggle" style="margin-top:14px;">
           <input type="checkbox" ${g.tradeFlag?'checked':''} onchange="toggleTrade('${g.id}', this.checked)">
           Flag this game to trade back
+        </label>
+        <label class="trade-toggle" style="margin-top:6px;">
+          <input type="checkbox" ${g.claimed?'checked':''} onchange="toggleClaimed('${g.id}', this.checked)">
+          Mark fully claimed (seats + parking spoken for outside the app)
         </label>
         <div style="margin-top:10px;">
           <button class="danger" onclick="deleteGame('${g.id}')">Delete game</button>
@@ -889,6 +924,13 @@ async function toggleTrade(gameId, checked){
   render();
   await saveGames();
 }
+async function toggleClaimed(gameId, checked){
+  const g = state.games.find(x=>x.id===gameId);
+  if(!g) return;
+  g.claimed = checked;
+  render();
+  await saveGames();
+}
 async function deleteGame(gameId){
   state.games = state.games.filter(g=>g.id!==gameId);
   delete state.responses[gameId];
@@ -897,15 +939,15 @@ async function deleteGame(gameId){
 }
 async function loadJetsScheduleLive(){
   const toAdd = [];
-  JETS_2026_HOME_GAMES.forEach(g=>{
-    if(!state.games.some(x=>x.opponent.toLowerCase()===g.opponent.toLowerCase())){
-      const ng = {id:uid(), opponent:g.opponent, date:g.date, time:g.time, tradeFlag:false, assignment:{seat1:null, seat2:null, parking:null}};
+  [...JETS_2026_PRESEASON_HOME_GAMES, ...JETS_2026_HOME_GAMES].forEach(g=>{
+    if(!state.games.some(x=>x.opponent.toLowerCase()===g.opponent.toLowerCase() && x.date===g.date)){
+      const ng = {id:uid(), opponent:g.opponent, date:g.date, time:g.time, season:g.season, tradeFlag:false, claimed:false, assignment:{seat1:null, seat2:null, parking:null}};
       state.games.push(ng);
       state.responses[ng.id] = {};
       toAdd.push(ng);
     }
   });
-  if(!toAdd.length){ uiError='All 8 home games are already on your schedule.'; render(); return; }
+  if(!toAdd.length){ uiError='All 10 home games (2 preseason + 8 regular) are already on your schedule.'; render(); return; }
   uiError='';
   render();
   await Promise.all([saveGames(), ...toAdd.map(g=>saveResponses(g.id))]);
@@ -968,9 +1010,10 @@ async function addGameLive(){
   const opp = document.getElementById('aOpp').value.trim();
   const date = document.getElementById('aDate').value;
   const time = document.getElementById('aTime').value || '13:00';
+  const season = document.getElementById('aSeason').value || 'reg';
   if(!opp || !date){ uiError='Add an opponent and date.'; render(); return; }
   uiError='';
-  const g = {id:uid(), opponent:opp, date, time, tradeFlag:false, assignment:{seat1:null, seat2:null, parking:null}};
+  const g = {id:uid(), opponent:opp, date, time, season, tradeFlag:false, claimed:false, assignment:{seat1:null, seat2:null, parking:null}};
   state.games.push(g);
   state.responses[g.id] = {};
   render();
