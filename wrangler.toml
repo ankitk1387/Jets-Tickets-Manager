@@ -1,0 +1,13 @@
+name = "jets-gatekeeper"
+compatibility_date = "2026-07-01"
+pages_build_output_dir = "public"
+
+# After you create the D1 database (Step 3 in README.md), replace
+# database_id below with the ID Cloudflare gives you. This file is
+# only needed if you want to test locally with `wrangler pages dev`
+# or run `wrangler d1` commands from your machine — the dashboard-only
+# setup in README.md works without ever touching this file.
+[[d1_databases]]
+binding = "DB"
+database_name = "jets-gatekeeper-db"
+database_id = "REPLACE_WITH_YOUR_DATABASE_ID"

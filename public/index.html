@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gate Keeper — Season Ticket Desk</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --bg:#f5f3ec;
+  --panel:#ffffff;
+  --panel-2:#eeece1;
+  --line:#d9d3c1;
+  --line-soft:#e6e1d2;
+  --green:#1f6e4f;
+  --green-bright:#157a52;
+  --green-deep:#e1f3ea;
+  --brass:#8a6b1f;
+  --brass-dim:#cbb37c;
+  --rust:#b3432b;
+  --ink:#1b2a22;
+  --on-accent:#f7f5ef;
+  --muted:#66756b;
+  --shadow: 0 8px 24px rgba(30,40,32,0.08);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(44,148,104,0.10), transparent),
+    radial-gradient(900px 500px at 100% 0%, rgba(201,161,90,0.06), transparent),
+    var(--bg);
+  color:var(--ink);
+  font-family:'Inter', sans-serif;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:'IBM Plex Mono', monospace;}
+.display{font-family:'Oswald', sans-serif; text-transform:uppercase; letter-spacing:0.02em;}
+
+#app{max-width:820px; margin:0 auto; padding:28px 18px 80px;}
+
+.masthead{
+  display:flex; align-items:center; justify-content:space-between;
+  padding-bottom:18px; margin-bottom:22px;
+  border-bottom:2px dashed var(--line);
+}
+.masthead h1{
+  font-family:'Oswald', sans-serif; font-weight:700; font-size:28px;
+  margin:0; letter-spacing:0.03em; color:var(--ink);
+  display:flex; align-items:center; gap:10px;
+}
+.masthead h1 .dot{width:10px;height:10px;border-radius:50%;background:var(--green-bright); box-shadow:0 0 10px var(--green-bright);}
+.masthead .sub{font-size:12px; color:var(--muted); margin-top:2px; letter-spacing:0.08em; text-transform:uppercase;}
+.nav-btns{display:flex; gap:8px;}
+.pill-btn{
+  font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.05em;
+  text-transform:uppercase; background:transparent; color:var(--muted);
+  border:1px solid var(--line); padding:7px 12px; border-radius:20px; cursor:pointer;
+  transition:all .15s ease;
+}
+.pill-btn:hover{border-color:var(--green-bright); color:var(--ink);}
+.pill-btn.active{background:var(--green-deep); border-color:var(--green-bright); color:var(--ink);}
+
+.card{
+  background:var(--panel); border:1px solid var(--line-soft); border-radius:14px;
+  padding:22px; margin-bottom:16px; box-shadow: var(--shadow);
+}
+.card h2{font-family:'Oswald',sans-serif; font-size:18px; margin:0 0 14px; letter-spacing:0.02em; color:var(--ink);}
+label{display:block; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:6px; margin-top:14px;}
+label:first-child{margin-top:0;}
+input[type=text], input[type=date], input[type=time], input[type=password]{
+  width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--ink);
+  padding:10px 12px; border-radius:8px; font-size:14px; font-family:'Inter',sans-serif;
+}
+input:focus{outline:none; border-color:var(--green-bright);}
+.row{display:flex; gap:10px;}
+.row > *{flex:1;}
+button.primary{
+  background:var(--green); color:var(--on-accent); border:none; padding:11px 18px;
+  border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; letter-spacing:0.02em;
+  transition:background .15s ease;
+}
+button.primary:hover{background:var(--green-bright);}
+button.ghost{
+  background:transparent; border:1px solid var(--line); color:var(--muted);
+  padding:10px 16px; border-radius:8px; cursor:pointer; font-size:13px;
+}
+button.ghost:hover{border-color:var(--brass); color:var(--ink);}
+button.danger{background:transparent; border:1px solid var(--rust); color:var(--rust); padding:8px 14px; border-radius:8px; cursor:pointer; font-size:12px;}
+button.danger:hover{background:var(--rust); color:var(--on-accent);}
+button.small-edit{background:transparent; border:1px solid var(--line); color:var(--muted); padding:4px 9px; border-radius:6px; cursor:pointer; font-size:11px;}
+button.small-edit:hover{border-color:var(--brass); color:var(--ink);}
+.helptext{font-size:12px; color:var(--muted); line-height:1.5; margin-top:6px;}
+.err{color:var(--rust); font-size:12px; margin-top:8px;}
+
+.chiplist{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+.chip{
+  background:var(--panel-2); border:1px solid var(--line); padding:6px 12px; border-radius:20px;
+  font-size:13px; display:flex; align-items:center; gap:8px;
+}
+.chip button{background:none;border:none;color:var(--rust);cursor:pointer;font-size:14px;padding:0;line-height:1;}
+.chip .phone{color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:11px;}
+
+.stub{
+  position:relative;
+  background:linear-gradient(180deg, var(--panel) 0%, var(--panel) 100%);
+  border:1px solid var(--line-soft);
+  border-radius:12px;
+  margin-bottom:18px;
+  display:flex;
+  overflow:visible;
+  box-shadow: var(--shadow);
+}
+.stub-main{flex:1; padding:20px 22px; position:relative;}
+.stub-perf{
+  width:0; position:relative; border-left:2px dashed var(--line);
+  margin:14px 0;
+}
+.stub-perf::before, .stub-perf::after{
+  content:''; position:absolute; left:-11px; width:22px; height:22px; border-radius:50%;
+  background:var(--bg); border:1px solid var(--line-soft);
+}
+.stub-perf::before{top:-14px;}
+.stub-perf::after{bottom:-14px;}
+.stub-side{width:150px; padding:20px 18px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center;}
+
+.game-num{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--brass); letter-spacing:0.12em;}
+.opponent{font-family:'Oswald',sans-serif; font-weight:600; font-size:22px; margin:4px 0 2px; letter-spacing:0.01em;}
+.gamedate{font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--muted);}
+
+.stamp{
+  font-family:'Oswald',sans-serif; font-weight:700; font-size:11px; letter-spacing:0.1em;
+  padding:5px 10px; border-radius:4px; transform:rotate(-4deg); display:inline-block;
+  border:2px solid; white-space:nowrap;
+}
+.stamp.open{color:var(--brass); border-color:var(--brass);}
+.stamp.filled{color:var(--green-bright); border-color:var(--green-bright);}
+.stamp.needsfill{color:var(--rust); border-color:var(--rust); animation:pulse 2s infinite;}
+.stamp.trade{color:var(--muted); border-color:var(--muted); text-decoration:line-through;}
+.stamp.mine{color:var(--brass); border-color:var(--brass);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.55;}}
+
+.seat-line{font-size:13px; color:var(--ink); margin-top:4px;}
+.seat-line .who{color:var(--brass);}
+
+.status-btns{display:flex; gap:6px; margin-top:14px;}
+.status-btn{
+  flex:1; padding:9px 4px; border-radius:8px; border:1px solid var(--line); background:var(--panel-2);
+  color:var(--muted); font-size:12px; font-weight:600; cursor:pointer; text-transform:uppercase; letter-spacing:0.04em;
+}
+.status-btn.in.selected{background:var(--green-deep); border-color:var(--green-bright); color:var(--green-bright);}
+.status-btn.maybe.selected{background:#faf1dc; border-color:var(--brass); color:var(--brass);}
+.status-btn.out.selected{background:#fbe9e5; border-color:var(--rust); color:var(--rust);}
+
+.resp-lists{margin-top:14px; font-size:12px;}
+.resp-group{margin-bottom:6px;}
+.resp-group .glabel{color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; font-size:10px; margin-right:6px;}
+.name-tag{
+  display:inline-block; background:var(--panel-2); border:1px solid var(--line); border-radius:12px;
+  padding:3px 9px; margin:2px 3px 2px 0; font-size:12px; cursor:pointer;
+}
+.name-tag:hover{border-color:var(--green-bright);}
+.name-tag.assigned{opacity:0.35; cursor:default;}
+.name-tag .cnt{opacity:0.55; font-size:10px; margin-left:3px;}
+
+.assign-slots{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;}
+.slot{
+  flex:1; min-width:130px; background:var(--panel-2); border:1px dashed var(--line); border-radius:8px;
+  padding:10px; font-size:12px;
+}
+.slot .slabel{color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; font-size:10px;}
+.slot .sval{font-size:14px; margin-top:4px; color:var(--ink);}
+.slot button{margin-top:6px;}
+
+.trade-toggle{margin-top:12px; display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); cursor:pointer;}
+.trade-toggle input{width:auto;}
+
+.empty-state{text-align:center; padding:50px 20px; color:var(--muted);}
+.empty-state .display{font-size:22px; color:var(--ink); margin-bottom:8px;}
+
+.loading{text-align:center; padding:80px 20px; color:var(--muted); font-family:'IBM Plex Mono',monospace;}
+
+.tradebar{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  background:var(--panel-2); border:1px solid var(--brass-dim); border-radius:10px; padding:12px 16px; margin-bottom:18px;
+  font-size:13px;
+}
+.tradebar .count{font-family:'IBM Plex Mono',monospace; color:var(--brass); font-weight:600;}
+
+select.namesel{width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:10px 12px; border-radius:8px; font-size:14px;}
+
+.priority-row{display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--line-soft); font-size:13px;}
+.priority-row:last-child{border-bottom:none;}
+.priority-rank{font-family:'IBM Plex Mono',monospace; color:var(--brass); width:24px; font-size:13px;}
+.priority-name{flex:1;}
+.priority-count{font-family:'IBM Plex Mono',monospace; color:var(--muted); font-size:12px;}
+.priority-badge{font-size:9px; text-transform:uppercase; letter-spacing:0.06em; background:var(--green-deep); color:var(--green-bright); padding:2px 7px; border-radius:10px; margin-left:8px;}
+
+.footer-note{text-align:center; color:var(--muted); font-size:11px; margin-top:30px; letter-spacing:0.03em;}
+.privacy-note{background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px 16px; font-size:12px; color:var(--muted); margin-bottom:16px; line-height:1.5;}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">loading gate keeper…</div></div>
+
+<script>
+const JETS_2026_HOME_GAMES = [
+  {opponent:'Green Bay Packers', date:'2026-09-20', time:'13:00'},
+  {opponent:'Cleveland Browns', date:'2026-10-11', time:'13:00'},
+  {opponent:'Miami Dolphins', date:'2026-10-25', time:'13:00'},
+  {opponent:'Las Vegas Raiders', date:'2026-11-01', time:'13:00'},
+  {opponent:'Buffalo Bills', date:'2026-11-15', time:'13:00'},
+  {opponent:'Denver Broncos', date:'2026-12-13', time:'13:00'},
+  {opponent:'New England Patriots', date:'2026-12-27', time:'13:00'},
+  {opponent:'Minnesota Vikings', date:'2027-01-03', time:'13:00'},
+];
+
+const SEASON_KEY_ROSTER = 'roster';
+const SEASON_KEY_GAMES = 'games';
+const SEASON_KEY_PIN = 'admin-pin';
+const respKey = (id) => `responses:${id}`;
+
+let state = { roster: null, games: null, pin: null, responses: {} };
+let view = 'loading'; // loading | setup | menu | friend | adminlogin | admin
+let sessionAdmin = false;
+let friendName = null;
+let uiError = '';
+let authError = '';
+
+async function safeGet(key, shared){
+  try{
+    const res = await fetch('/api/kv/' + encodeURIComponent(key));
+    if(res.status === 404) return null;
+    if(!res.ok) return null;
+    const data = await res.json();
+    return data.value;
+  }catch(e){ return null; }
+}
+async function safeSet(key, value, shared){
+  try{
+    const res = await fetch('/api/kv/' + encodeURIComponent(key), {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ value })
+    });
+    return res.ok;
+  }catch(e){ return false; }
+}
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+async function loadAll(){
+  const rosterRaw = await safeGet(SEASON_KEY_ROSTER, true);
+  const gamesRaw = await safeGet(SEASON_KEY_GAMES, true);
+  const pinRaw = await safeGet(SEASON_KEY_PIN, true);
+  state.roster = rosterRaw ? JSON.parse(rosterRaw) : [];
+  state.games = gamesRaw ? JSON.parse(gamesRaw) : [];
+  state.pin = pinRaw || null;
+
+  state.responses = {};
+  for(const g of state.games){
+    const r = await safeGet(respKey(g.id), true);
+    state.responses[g.id] = r ? JSON.parse(r) : {};
+  }
+
+  if(!state.roster.length && !state.games.length && !state.pin){
+    view = 'setup';
+  } else {
+    view = 'menu';
+  }
+  render();
+}
+
+async function saveRoster(){ await safeSet(SEASON_KEY_ROSTER, JSON.stringify(state.roster), true); }
+async function saveGames(){ await safeSet(SEASON_KEY_GAMES, JSON.stringify(state.games), true); }
+async function savePin(){ await safeSet(SEASON_KEY_PIN, state.pin, true); }
+async function saveResponses(gameId){ await safeSet(respKey(gameId), JSON.stringify(state.responses[gameId]||{}), true); }
+
+function sortedGames(){
+  return [...state.games].sort((a,b)=> new Date(a.date+'T'+(a.time||'13:00')) - new Date(b.date+'T'+(b.time||'13:00')));
+}
+function fmtDate(dstr){
+  try{
+    const d = new Date(dstr+'T12:00:00');
+    return d.toLocaleDateString('en-US',{weekday:'short', month:'short', day:'numeric'});
+  }catch(e){ return dstr; }
+}
+function fmtTime(t){
+  if(!t) return '';
+  const [h,m] = t.split(':').map(Number);
+  const ap = h>=12?'PM':'AM';
+  const hh = ((h+11)%12)+1;
+  return `${hh}:${m.toString().padStart(2,'0')} ${ap}`;
+}
+function tradeFlagCount(){ return state.games.filter(g=>g.tradeFlag).length; }
+function statusOf(gameId, name){
+  const r = state.responses[gameId] || {};
+  return r[name] ? r[name].status : null;
+}
+function attendanceCounts(){
+  const counts = {};
+  state.roster.forEach(f=>counts[f.name]=0);
+  state.games.forEach(g=>{
+    const a=g.assignment||{};
+    if(a.seat1 && counts[a.seat1]!==undefined) counts[a.seat1]++;
+    if(a.seat2 && counts[a.seat2]!==undefined) counts[a.seat2]++;
+  });
+  return counts;
+}
+function priorityOrder(){
+  const counts = attendanceCounts();
+  return state.roster.map(f=>({name:f.name, count:counts[f.name]||0}))
+    .sort((a,b)=> a.count-b.count || a.name.localeCompare(b.name));
+}
+
+/* ============ RENDER ============ */
+function render(){
+  const app = document.getElementById('app');
+  if(view==='loading'){ app.innerHTML = `<div class="loading">loading gate keeper…</div>`; return; }
+
+  let html = `<div class="masthead">
+      <div>
+        <h1><span class="dot"></span>Gate Keeper</h1>
+        <div class="sub">Jets season ticket desk</div>
+      </div>
+      <div class="nav-btns">
+        ${view!=='setup' ? `
+        <button class="pill-btn ${view==='friend'||view==='menu'?'active':''}" onclick="goMenu()">Friends</button>
+        <button class="pill-btn ${view==='admin'||view==='adminlogin'?'active':''}" onclick="goAdminGate()">Admin</button>
+        ` : ''}
+      </div>
+    </div>`;
+
+  if(view==='setup') html += renderSetup();
+  else if(view==='menu') html += renderMenu();
+  else if(view==='friend') html += renderFriend();
+  else if(view==='adminlogin') html += renderAdminLogin();
+  else if(view==='admin') html += renderAdmin();
+
+  html += `<div class="footer-note">2 seats · 1 parking pass · shared with your group</div>`;
+  app.innerHTML = html;
+}
+
+/* ============ SETUP ============ */
+let setupDraft = { friends:[], games:[], pin:'' };
+function renderSetup(){
+  return `
+  <div class="card">
+    <h2>① Your crew</h2>
+    <p class="helptext">Add everyone who might want a seat. Each person confirms the last 4 digits of their cell to check in later — that's what keeps their answers private from the rest of the group.</p>
+    <div class="row">
+      <input type="text" id="friendInput" placeholder="Friend's name">
+      <input type="text" id="friendPhone" placeholder="Last 4 of cell" maxlength="4" inputmode="numeric">
+      <button class="primary" onclick="addDraftFriend()" style="flex:0 0 auto;">Add</button>
+    </div>
+    <div class="chiplist">
+      ${setupDraft.friends.map((f,i)=>`<div class="chip">${escapeHtml(f.name)} <span class="phone">••${escapeHtml(f.phone4)}</span> <button onclick="removeDraftFriend(${i})">✕</button></div>`).join('') || '<span class="helptext">No one added yet.</span>'}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>② Home games</h2>
+    <p class="helptext">Add each home game — opponent, date, kickoff time. Editable later from Admin.</p>
+    <button class="ghost" style="margin-bottom:12px;" onclick="loadJetsSchedule()">⚡ Load 2026 Jets home schedule (all 8, 1:00 PM)</button>
+    <div class="row">
+      <input type="text" id="oppInput" placeholder="Opponent (e.g. Bills)">
+      <input type="date" id="dateInput">
+      <input type="time" id="timeInput" value="13:00">
+    </div>
+    <button class="primary" style="margin-top:10px;" onclick="addDraftGame()">Add game</button>
+    <div style="margin-top:14px;">
+      ${setupDraft.games.map((g,i)=>`
+        <div class="chip" style="width:100%; justify-content:space-between; border-radius:8px;">
+          <span>Game ${i+1} · vs ${escapeHtml(g.opponent)} · ${fmtDate(g.date)} · ${fmtTime(g.time)}</span>
+          <button onclick="removeDraftGame(${i})">✕</button>
+        </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>③ Admin PIN</h2>
+    <p class="helptext">Only you use this to assign seats and manage trades.</p>
+    <input type="password" id="pinInput" placeholder="Set a PIN (e.g. 4 digits)">
+  </div>
+
+  <button class="primary" style="width:100%; padding:14px;" onclick="finishSetup()">Launch season</button>
+  ${uiError ? `<div class="err">${escapeHtml(uiError)}</div>` : ''}
+  `;
+}
+function addDraftFriend(){
+  const el = document.getElementById('friendInput');
+  const pEl = document.getElementById('friendPhone');
+  const v = el.value.trim();
+  const p = pEl.value.trim();
+  if(!v){ uiError='Enter a name.'; render(); return; }
+  if(!/^\d{4}$/.test(p)){ uiError='Last 4 of cell must be exactly 4 digits.'; render(); return; }
+  if(setupDraft.friends.some(f=>f.name.toLowerCase()===v.toLowerCase())){ uiError='That name is already added.'; render(); return; }
+  uiError='';
+  setupDraft.friends.push({name:v, phone4:p});
+  el.value=''; pEl.value='';
+  render();
+}
+function removeDraftFriend(i){ setupDraft.friends.splice(i,1); render(); }
+function addDraftGame(){
+  const opp = document.getElementById('oppInput').value.trim();
+  const date = document.getElementById('dateInput').value;
+  const time = document.getElementById('timeInput').value || '13:00';
+  if(!opp || !date){ uiError='Add an opponent and date for the game.'; render(); return; }
+  uiError='';
+  setupDraft.games.push({id:uid(), opponent:opp, date, time, tradeFlag:false, assignment:{seat1:null, seat2:null, parking:null}});
+  document.getElementById('oppInput').value=''; document.getElementById('dateInput').value='';
+  render();
+}
+function loadJetsSchedule(){
+  JETS_2026_HOME_GAMES.forEach(g=>{
+    if(!setupDraft.games.some(x=>x.opponent.toLowerCase()===g.opponent.toLowerCase())){
+      setupDraft.games.push({id:uid(), opponent:g.opponent, date:g.date, time:g.time, tradeFlag:false, assignment:{seat1:null, seat2:null, parking:null}});
+    }
+  });
+  render();
+}
+function removeDraftGame(i){ setupDraft.games.splice(i,1); render(); }
+async function finishSetup(){
+  const pin = document.getElementById('pinInput').value.trim();
+  if(!setupDraft.friends.length){ uiError='Add at least one friend.'; render(); return; }
+  if(!setupDraft.games.length){ uiError='Add at least one game.'; render(); return; }
+  if(!pin){ uiError='Set an admin PIN.'; render(); return; }
+  uiError='';
+  state.roster = setupDraft.friends;
+  state.games = setupDraft.games;
+  state.pin = pin;
+  for(const g of state.games){ state.responses[g.id] = {}; }
+  await Promise.all([saveRoster(), saveGames(), savePin(), ...state.games.map(g=>saveResponses(g.id))]);
+  view='menu';
+  render();
+}
+
+/* ============ MENU ============ */
+function goMenu(){ friendName=null; authError=''; view='menu'; render(); }
+function renderMenu(){
+  if(!state.games.length){
+    return `<div class="empty-state"><div class="display">No games set up yet</div>Ask the admin to add the season schedule.</div>`;
+  }
+  return `
+  <div class="card">
+    <h2>Who's checking in?</h2>
+    <p class="helptext">Enter the last 4 digits of your cell to check in. No name list — just your own number identifies you, and you'll only ever see your own answers.</p>
+    <input type="text" id="phoneCheck" maxlength="4" inputmode="numeric" placeholder="••••" onkeydown="if(event.key==='Enter'){checkPhone();}">
+    <button class="primary" style="margin-top:12px;" onclick="checkPhone()">Confirm</button>
+    ${authError ? `<div class="err">${escapeHtml(authError)}</div>` : ''}
+  </div>`;
+}
+function checkPhone(){
+  const v = document.getElementById('phoneCheck').value.trim();
+  if(!/^\d{4}$/.test(v)){
+    authError = "Enter 4 digits.";
+    render();
+    return;
+  }
+  const matches = state.roster.filter(x=>x.phone4===v);
+  if(matches.length===1){
+    friendName = matches[0].name;
+    authError='';
+    view='friend';
+    render();
+  } else if(matches.length>1){
+    authError = "More than one person on file matches those digits — ask the admin to fix a duplicate.";
+    render();
+  } else {
+    authError = "That doesn't match anyone on file — ask the admin to check your number.";
+    render();
+  }
+}
+
+/* ============ FRIEND VIEW (private) ============ */
+function renderFriend(){
+  const games = sortedGames();
+  let out = `<div class="card" style="display:flex; align-items:center; justify-content:space-between;">
+    <div><div style="font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em;">Checked in as</div>
+    <div class="display" style="font-size:20px;">${escapeHtml(friendName)}</div></div>
+    <button class="ghost" onclick="goMenu()">Log out</button>
+  </div>
+  <div class="privacy-note">You're only seeing your own responses and seat status here — other people's names and answers stay private to the admin.</div>`;
+
+  games.forEach((g, idx)=>{
+    const a = g.assignment || {};
+    const iHaveSeat1 = a.seat1===friendName;
+    const iHaveSeat2 = a.seat2===friendName;
+    const iHaveParking = a.parking===friendName;
+    const bothFilled = !!(a.seat1 && a.seat2);
+
+    let stampHtml;
+    if(g.tradeFlag) stampHtml = `<div class="stamp trade">Trading back</div>`;
+    else if(iHaveSeat1 || iHaveSeat2) stampHtml = `<div class="stamp mine">You're in!</div>`;
+    else if(bothFilled) stampHtml = `<div class="stamp filled">Filled</div>`;
+    else stampHtml = `<div class="stamp open">Open</div>`;
+
+    const myStatus = statusOf(g.id, friendName);
+
+    out += `
+    <div class="stub">
+      <div class="stub-main">
+        <div class="game-num">GAME ${idx+1} OF ${games.length}</div>
+        <div class="opponent">vs ${escapeHtml(g.opponent)}</div>
+        <div class="gamedate">${fmtDate(g.date)} · ${fmtTime(g.time)}</div>
+        <div class="seat-line">${(iHaveSeat1||iHaveSeat2) ? `You have a seat for this one 🎟` : (bothFilled ? 'Both seats are spoken for' : 'Seats still open')}</div>
+        ${iHaveParking ? `<div class="seat-line">The parking pass is yours for this game 🚗</div>` : ''}
+        <div class="status-btns">
+          <button class="status-btn in ${myStatus==='in'?'selected':''}" onclick="setStatus('${g.id}','in')">I'm in</button>
+          <button class="status-btn maybe ${myStatus==='maybe'?'selected':''}" onclick="setStatus('${g.id}','maybe')">Maybe</button>
+          <button class="status-btn out ${myStatus==='out'?'selected':''}" onclick="setStatus('${g.id}','out')">Can't go</button>
+        </div>
+      </div>
+      <div class="stub-perf"></div>
+      <div class="stub-side">
+        ${stampHtml}
+      </div>
+    </div>`;
+  });
+  return out;
+}
+async function setStatus(gameId, status){
+  if(!friendName) return;
+  if(!state.responses[gameId]) state.responses[gameId] = {};
+  state.responses[gameId][friendName] = { status, ts: Date.now() };
+  render();
+  await saveResponses(gameId);
+}
+
+/* ============ ADMIN LOGIN ============ */
+function goAdminGate(){
+  view = sessionAdmin ? 'admin' : 'adminlogin';
+  render();
+}
+function renderAdminLogin(){
+  return `<div class="card">
+    <h2>Admin PIN</h2>
+    <input type="password" id="pinCheck" placeholder="Enter PIN" onkeydown="if(event.key==='Enter'){checkPin();}">
+    <button class="primary" style="margin-top:12px;" onclick="checkPin()">Enter</button>
+    ${uiError ? `<div class="err">${escapeHtml(uiError)}</div>` : ''}
+  </div>`;
+}
+function checkPin(){
+  const v = document.getElementById('pinCheck').value;
+  if(v === state.pin){ sessionAdmin = true; uiError=''; view='admin'; render(); }
+  else { uiError = 'Wrong PIN.'; render(); }
+}
+
+/* ============ ADMIN VIEW ============ */
+let expandedGame = null;
+let editingRosterIdx = null;
+function renderAdmin(){
+  const games = sortedGames();
+  const flagCount = tradeFlagCount();
+  const order = priorityOrder();
+  const counts = attendanceCounts();
+
+  let out = `
+  <div class="card" style="border-color:var(--brass-dim);">
+    <h2>Backup &amp; restore</h2>
+    <p class="helptext">Publishing a code update can reset stored data. Before you republish any change, click <b>Export backup</b> and save the text somewhere — after republishing, paste it back in and click <b>Restore</b> to bring everything back.</p>
+    <button class="ghost" onclick="exportBackup()">Export backup</button>
+    <textarea id="backupBox" style="width:100%; margin-top:10px; min-height:90px; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:10px; font-family:'IBM Plex Mono',monospace; font-size:11px;" placeholder="Backup text appears here after Export, or paste a saved backup here to restore it."></textarea>
+    <div style="margin-top:10px;">
+      <button class="primary" onclick="restoreBackup()">Restore from text above</button>
+    </div>
+    ${uiError.startsWith('Backup') || uiError.startsWith('Restore') ? `<div class="err">${escapeHtml(uiError)}</div>` : ''}
+  </div>
+
+  <div class="tradebar">
+    <span>Games flagged to trade back</span>
+    <span class="count">${flagCount} / 3</span>
+  </div>
+
+  <div class="card">
+    <h2>Priority order</h2>
+    <p class="helptext">Ranked by fewest games seated so far this season — a guide for who's "next up" when you're assigning seats. Ties broken alphabetically.</p>
+    ${order.map((p,i)=>`
+      <div class="priority-row">
+        <span class="priority-rank">#${i+1}</span>
+        <span class="priority-name">${escapeHtml(p.name)}</span>
+        <span class="priority-count">${p.count} game${p.count===1?'':'s'} seated</span>
+        ${i<2 ? '<span class="priority-badge">Next up</span>' : ''}
+      </div>`).join('') || '<span class="helptext">Add friends to the roster to see priority order.</span>'}
+  </div>
+
+  <div class="card">
+    <h2>Roster</h2>
+    <div class="row">
+      <input type="text" id="newFriend" placeholder="Add a friend">
+      <input type="text" id="newFriendPhone" placeholder="Last 4 of cell" maxlength="4" inputmode="numeric">
+      <button class="primary" style="flex:0 0 auto;" onclick="addFriendLive()">Add</button>
+    </div>
+    <div class="chiplist">
+      ${state.roster.map((f,i)=> editingRosterIdx===i ? `
+        <div class="chip">
+          <input type="text" id="editPhone" value="${escapeHtml(f.phone4)}" maxlength="4" inputmode="numeric" style="width:60px; padding:4px 8px;">
+          <button class="small-edit" onclick="savePhoneEdit(${i})">Save</button>
+          <button class="small-edit" onclick="editingRosterIdx=null; render();">Cancel</button>
+        </div>
+      ` : `
+        <div class="chip">${escapeHtml(f.name)} <span class="phone">••${escapeHtml(f.phone4)}</span>
+          <button class="small-edit" onclick="editingRosterIdx=${i}; render();" style="color:var(--muted); border:none;">✎</button>
+          <button onclick="removeFriendLive(${i})">✕</button>
+        </div>`).join('')}
+    </div>
+    ${uiError ? `<div class="err">${escapeHtml(uiError)}</div>` : ''}
+  </div>
+
+  <div class="card">
+    <h2>Add a game</h2>
+    <button class="ghost" style="margin-bottom:12px;" onclick="loadJetsScheduleLive()">⚡ Load 2026 Jets home schedule (fills in any missing of the 8)</button>
+    <div class="row">
+      <input type="text" id="aOpp" placeholder="Opponent">
+      <input type="date" id="aDate">
+      <input type="time" id="aTime" value="13:00">
+    </div>
+    <button class="primary" style="margin-top:10px;" onclick="addGameLive()">Add game</button>
+  </div>
+  `;
+
+  games.forEach((g, idx)=>{
+    const responses = state.responses[g.id] || {};
+    const ins = Object.entries(responses).filter(([n,v])=>v.status==='in').sort((a,b)=>a[1].ts-b[1].ts).map(([n])=>n);
+    const maybes = Object.entries(responses).filter(([n,v])=>v.status==='maybe').map(([n])=>n);
+    const outs = Object.entries(responses).filter(([n,v])=>v.status==='out').map(([n])=>n);
+    const a = g.assignment || {};
+    const assignedNames = [a.seat1, a.seat2].filter(Boolean);
+    const availableIns = ins.filter(n=>!assignedNames.includes(n)).sort((x,y)=>(counts[x]||0)-(counts[y]||0));
+
+    let stampHtml;
+    if(g.tradeFlag) stampHtml = `<div class="stamp trade">Trading back</div>`;
+    else if(a.seat1 && a.seat2) stampHtml = `<div class="stamp filled">Filled</div>`;
+    else if(ins.length===0) stampHtml = `<div class="stamp needsfill">No takers</div>`;
+    else stampHtml = `<div class="stamp open">Open</div>`;
+
+    const isOpen = expandedGame === g.id;
+
+    out += `
+    <div class="stub">
+      <div class="stub-main">
+        <div class="game-num">GAME ${idx+1} OF ${games.length}</div>
+        <div class="opponent">vs ${escapeHtml(g.opponent)}</div>
+        <div class="gamedate">${fmtDate(g.date)} · ${fmtTime(g.time)} · ${ins.length} in / ${maybes.length} maybe / ${outs.length} out</div>
+
+        <div class="assign-slots">
+          <div class="slot">
+            <div class="slabel">Seat 1</div>
+            <div class="sval">${a.seat1 ? escapeHtml(a.seat1) : '— open —'}</div>
+            ${a.seat1 ? `<button class="danger" onclick="clearSeat('${g.id}','seat1')">Cancel</button>` : ''}
+          </div>
+          <div class="slot">
+            <div class="slabel">Seat 2</div>
+            <div class="sval">${a.seat2 ? escapeHtml(a.seat2) : '— open —'}</div>
+            ${a.seat2 ? `<button class="danger" onclick="clearSeat('${g.id}','seat2')">Cancel</button>` : ''}
+          </div>
+          <div class="slot">
+            <div class="slabel">Parking pass</div>
+            <div class="sval">${a.parking ? escapeHtml(a.parking) : '— unassigned —'}</div>
+            ${a.parking ? `<button class="danger" onclick="clearSeat('${g.id}','parking')">Clear</button>` : ''}
+          </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <button class="ghost" onclick="toggleExpand('${g.id}')">${isOpen ? 'Hide responses' : 'Assign / view responses'}</button>
+        </div>
+
+        ${isOpen ? `
+        <div class="resp-lists">
+          <div class="resp-group"><span class="glabel">In — tap to assign · sorted by priority</span><br/>
+            ${availableIns.length ? availableIns.map(n=>`<span class="name-tag" onclick="quickAssign('${g.id}','${escapeAttr(n)}')">${escapeHtml(n)}<span class="cnt">(${counts[n]||0})</span></span>`).join('') : (ins.length ? '<span class="helptext">All available "in" folks are already seated.</span>' : '<span class="helptext">No one has said they can make it yet.</span>')}
+            ${assignedNames.filter(n=>ins.includes(n)).map(n=>`<span class="name-tag assigned">${escapeHtml(n)} ✓ seated</span>`).join('')}
+          </div>
+          <div class="resp-group"><span class="glabel">Maybe</span><br/>
+            ${maybes.length ? maybes.map(n=>`<span class="name-tag" onclick="quickAssign('${g.id}','${escapeAttr(n)}')">${escapeHtml(n)}</span>`).join('') : '<span class="helptext">none</span>'}
+          </div>
+          <div class="resp-group"><span class="glabel">Can't go</span><br/>
+            ${outs.length ? outs.map(n=>`<span class="name-tag" style="opacity:0.5;">${escapeHtml(n)}</span>`).join('') : '<span class="helptext">none</span>'}
+          </div>
+          <div class="resp-group" style="margin-top:8px;"><span class="glabel">Parking to</span><br/>
+            ${state.roster.map(f=>`<span class="name-tag ${a.parking===f.name?'assigned':''}" onclick="assignParking('${g.id}','${escapeAttr(f.name)}')">${escapeHtml(f.name)}</span>`).join('')}
+          </div>
+        </div>
+        ` : ''}
+
+        <label class="trade-toggle" style="margin-top:14px;">
+          <input type="checkbox" ${g.tradeFlag?'checked':''} onchange="toggleTrade('${g.id}', this.checked)">
+          Flag this game to trade back
+        </label>
+        <div style="margin-top:10px;">
+          <button class="danger" onclick="deleteGame('${g.id}')">Delete game</button>
+        </div>
+      </div>
+      <div class="stub-perf"></div>
+      <div class="stub-side">${stampHtml}</div>
+    </div>`;
+  });
+
+  return out;
+}
+
+function exportBackup(){
+  const payload = { roster: state.roster, games: state.games, pin: state.pin, responses: state.responses };
+  const box = document.getElementById('backupBox');
+  if(box) box.value = JSON.stringify(payload);
+  uiError='';
+  render();
+  const freshBox = document.getElementById('backupBox');
+  if(freshBox){ freshBox.value = JSON.stringify(payload); freshBox.select(); }
+}
+async function restoreBackup(){
+  const box = document.getElementById('backupBox');
+  const raw = box ? box.value.trim() : '';
+  if(!raw){ uiError='Backup box is empty — paste your saved backup text first.'; render(); return; }
+  let payload;
+  try{ payload = JSON.parse(raw); }
+  catch(e){ uiError='Restore failed — that text doesn\'t look like a valid backup.'; render(); return; }
+  if(!payload.roster || !payload.games){ uiError='Restore failed — missing roster or games in that backup.'; render(); return; }
+  state.roster = payload.roster;
+  state.games = payload.games;
+  state.pin = payload.pin || state.pin;
+  state.responses = payload.responses || {};
+  uiError='';
+  render();
+  await Promise.all([
+    saveRoster(), saveGames(), savePin(),
+    ...state.games.map(g=>saveResponses(g.id))
+  ]);
+  uiError='Restore complete — data saved back to storage.';
+  render();
+}
+function toggleExpand(id){ expandedGame = (expandedGame===id) ? null : id; render(); }
+
+async function quickAssign(gameId, name){
+  const g = state.games.find(x=>x.id===gameId);
+  if(!g) return;
+  if(!g.assignment) g.assignment = {seat1:null, seat2:null, parking:null};
+  if(g.assignment.seat1===name || g.assignment.seat2===name) return;
+  if(!g.assignment.seat1) g.assignment.seat1 = name;
+  else if(!g.assignment.seat2) g.assignment.seat2 = name;
+  else { uiError = 'Both seats are already assigned — cancel one first.'; render(); return; }
+  uiError='';
+  render();
+  await saveGames();
+}
+async function assignParking(gameId, name){
+  const g = state.games.find(x=>x.id===gameId);
+  if(!g) return;
+  if(!g.assignment) g.assignment = {seat1:null, seat2:null, parking:null};
+  g.assignment.parking = (g.assignment.parking===name) ? null : name;
+  render();
+  await saveGames();
+}
+async function clearSeat(gameId, slot){
+  const g = state.games.find(x=>x.id===gameId);
+  if(!g || !g.assignment) return;
+  g.assignment[slot] = null;
+  expandedGame = gameId;
+  render();
+  await saveGames();
+}
+async function toggleTrade(gameId, checked){
+  const g = state.games.find(x=>x.id===gameId);
+  if(!g) return;
+  if(checked && tradeFlagCount()>=3){ uiError='You can only trade back 3 games — un-flag one first.'; render(); return; }
+  uiError='';
+  g.tradeFlag = checked;
+  render();
+  await saveGames();
+}
+async function deleteGame(gameId){
+  state.games = state.games.filter(g=>g.id!==gameId);
+  delete state.responses[gameId];
+  render();
+  await saveGames();
+}
+async function loadJetsScheduleLive(){
+  const toAdd = [];
+  JETS_2026_HOME_GAMES.forEach(g=>{
+    if(!state.games.some(x=>x.opponent.toLowerCase()===g.opponent.toLowerCase())){
+      const ng = {id:uid(), opponent:g.opponent, date:g.date, time:g.time, tradeFlag:false, assignment:{seat1:null, seat2:null, parking:null}};
+      state.games.push(ng);
+      state.responses[ng.id] = {};
+      toAdd.push(ng);
+    }
+  });
+  if(!toAdd.length){ uiError='All 8 home games are already on your schedule.'; render(); return; }
+  uiError='';
+  render();
+  await Promise.all([saveGames(), ...toAdd.map(g=>saveResponses(g.id))]);
+}
+async function addFriendLive(){
+  const el = document.getElementById('newFriend');
+  const pEl = document.getElementById('newFriendPhone');
+  const v = el.value.trim();
+  const p = pEl.value.trim();
+  if(!v){ uiError='Enter a name.'; render(); return; }
+  if(!/^\d{4}$/.test(p)){ uiError='Last 4 of cell must be exactly 4 digits.'; render(); return; }
+  if(state.roster.some(f=>f.name.toLowerCase()===v.toLowerCase())){ uiError='That name is already on the roster.'; render(); return; }
+  uiError='';
+  state.roster.push({name:v, phone4:p});
+  render();
+  await saveRoster();
+}
+async function removeFriendLive(i){
+  state.roster.splice(i,1);
+  render();
+  await saveRoster();
+}
+async function savePhoneEdit(i){
+  const v = document.getElementById('editPhone').value.trim();
+  if(!/^\d{4}$/.test(v)){ uiError='Last 4 of cell must be exactly 4 digits.'; render(); return; }
+  uiError='';
+  state.roster[i].phone4 = v;
+  editingRosterIdx = null;
+  render();
+  await saveRoster();
+}
+async function addGameLive(){
+  const opp = document.getElementById('aOpp').value.trim();
+  const date = document.getElementById('aDate').value;
+  const time = document.getElementById('aTime').value || '13:00';
+  if(!opp || !date){ uiError='Add an opponent and date.'; render(); return; }
+  uiError='';
+  const g = {id:uid(), opponent:opp, date, time, tradeFlag:false, assignment:{seat1:null, seat2:null, parking:null}};
+  state.games.push(g);
+  state.responses[g.id] = {};
+  render();
+  await Promise.all([saveGames(), saveResponses(g.id)]);
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s){ return String(s).replace(/'/g, "\\'"); }
+
+loadAll();
+</script>
+</body>
+</html>
