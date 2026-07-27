@@ -75,6 +75,11 @@ input[type=text], input[type=date], input[type=time], input[type=password]{
   width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--ink);
   padding:10px 12px; border-radius:8px; font-size:14px; font-family:'Inter',sans-serif;
 }
+input.pin-mask{
+  -webkit-text-security: disc;
+  text-security: disc;
+  letter-spacing: 0.15em;
+}
 input:focus{outline:none; border-color:var(--green-bright);}
 .row{display:flex; gap:10px;}
 .row > *{flex:1;}
@@ -424,7 +429,7 @@ function renderSetup(){
   <div class="card">
     <h2>③ Admin PIN</h2>
     <p class="helptext">Only you use this to assign seats and manage trades.</p>
-    <input type="password" id="pinInput" placeholder="Set a PIN (e.g. 4 digits)">
+    <input type="text" inputmode="numeric" autocomplete="off" class="pin-mask" id="pinInput" placeholder="Set a PIN (e.g. 4 digits)">
   </div>
 
   <button class="primary" style="width:100%; padding:14px;" onclick="finishSetup()">Launch season</button>
@@ -603,7 +608,7 @@ function goAdminGate(){
 function renderAdminLogin(){
   return `<div class="card">
     <h2>Admin PIN</h2>
-    <input type="password" id="pinCheck" placeholder="Enter PIN" onkeydown="if(event.key==='Enter'){checkPin();}">
+    <input type="text" inputmode="numeric" autocomplete="off" class="pin-mask" id="pinCheck" placeholder="Enter PIN" onkeydown="if(event.key==='Enter'){checkPin();}">
     <button class="primary" style="margin-top:12px;" onclick="checkPin()">Enter</button>
     ${uiError ? `<div class="err">${escapeHtml(uiError)}</div>` : ''}
   </div>`;
@@ -919,9 +924,36 @@ async function addFriendLive(){
   await saveRoster();
 }
 async function removeFriendLive(i){
+  const removed = state.roster[i];
+  if(!removed) return;
+  const confirmed = confirm(`Remove ${removed.name} from the roster? This also clears their responses and any seat or parking assignment they're currently holding.`);
+  if(!confirmed) return;
+
   state.roster.splice(i,1);
+
+  const responsesToSave = [];
+  let gamesChanged = false;
+
+  state.games.forEach(g=>{
+    const r = state.responses[g.id];
+    if(r && Object.prototype.hasOwnProperty.call(r, removed.name)){
+      delete r[removed.name];
+      responsesToSave.push(g.id);
+    }
+    const a = g.assignment;
+    if(a){
+      if(a.seat1===removed.name){ a.seat1=null; gamesChanged=true; }
+      if(a.seat2===removed.name){ a.seat2=null; gamesChanged=true; }
+      if(a.parking===removed.name){ a.parking=null; gamesChanged=true; }
+    }
+  });
+
   render();
-  await saveRoster();
+
+  const saves = [saveRoster()];
+  if(gamesChanged) saves.push(saveGames());
+  responsesToSave.forEach(id=>saves.push(saveResponses(id)));
+  await Promise.all(saves);
 }
 async function savePhoneEdit(i){
   const v = document.getElementById('editPhone').value.trim();
