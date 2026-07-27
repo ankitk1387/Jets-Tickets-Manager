@@ -159,6 +159,8 @@ button.small-edit:hover{border-color:var(--brass); color:var(--ink);}
 .status-btn.in.selected{background:var(--green-deep); border-color:var(--green-bright); color:var(--green-bright);}
 .status-btn.maybe.selected{background:#faf1dc; border-color:var(--brass); color:var(--brass);}
 .status-btn.out.selected{background:#fbe9e5; border-color:var(--rust); color:var(--rust);}
+.status-btn:disabled{opacity:0.45; cursor:not-allowed;}
+.status-btn:disabled.selected{opacity:0.6;}
 
 .save-flash{
   margin-top:8px; font-size:12px; font-weight:600; color:var(--green-bright);
@@ -583,10 +585,11 @@ function renderFriend(){
         <div class="seat-line">${(iHaveSeat1||iHaveSeat2) ? `You have a seat for this one 🎟` : (g.claimed ? 'This game is fully claimed' : (bothFilled ? 'Both seats are spoken for' : 'Seats still open'))}</div>
         ${iHaveParking ? `<div class="seat-line">The parking pass is yours for this game 🚗</div>` : ''}
         <div class="status-btns">
-          <button class="status-btn in ${myStatus==='in'?'selected':''}" onclick="setStatus('${g.id}','in')">I'm in</button>
-          <button class="status-btn maybe ${myStatus==='maybe'?'selected':''}" onclick="setStatus('${g.id}','maybe')">Maybe</button>
-          <button class="status-btn out ${myStatus==='out'?'selected':''}" onclick="setStatus('${g.id}','out')">Can't go</button>
+          <button class="status-btn in ${myStatus==='in'?'selected':''}" ${greyed?'disabled':''} onclick="setStatus('${g.id}','in')">I'm in</button>
+          <button class="status-btn maybe ${myStatus==='maybe'?'selected':''}" ${greyed?'disabled':''} onclick="setStatus('${g.id}','maybe')">Maybe</button>
+          <button class="status-btn out ${myStatus==='out'?'selected':''}" ${greyed?'disabled':''} onclick="setStatus('${g.id}','out')">Can't go</button>
         </div>
+        ${greyed ? `<div class="helptext" style="margin-top:8px;">Responses are locked for this game since it's fully claimed.</div>` : ''}
         ${justSavedGameId===g.id ? `<div class="save-flash">✓ Saved</div>` : ''}
         ${saveErrorGameId===g.id ? `<div class="err">Couldn't save — check your connection and tap again.</div>` : ''}
       </div>
@@ -603,6 +606,12 @@ let saveErrorGameId = null;
 let justSavedTimer = null;
 async function setStatus(gameId, status){
   if(!friendName) return;
+  const g = state.games.find(x=>x.id===gameId);
+  if(g && g.claimed){
+    const a = g.assignment || {};
+    const iHoldSeat = a.seat1===friendName || a.seat2===friendName;
+    if(!iHoldSeat) return;
+  }
   if(!state.responses[gameId]) state.responses[gameId] = {};
   state.responses[gameId][friendName] = { status, ts: Date.now() };
   saveErrorGameId = null;
