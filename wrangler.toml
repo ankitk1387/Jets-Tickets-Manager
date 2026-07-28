@@ -12,3 +12,14 @@ binding = "ASSETS"
 binding = "DB"
 database_name = "jets-gatekeeper-db"
 database_id = "e272ec88-2ecd-4d9b-ba02-f270e5b75ef2"
+
+# Runs twice daily. Cloudflare cron times are UTC.
+# "0 17 * * *" = 17:00 UTC ≈ 12:00 PM Eastern (EST, UTC-5)
+# "0 0  * * *" = 00:00 UTC ≈  7:00 PM Eastern (EST, UTC-5)
+# Eastern is only on EST (UTC-5) from early Nov to mid-March. During
+# EDT (UTC-4, roughly Aug-early Nov — covering preseason and the
+# start of the regular season) these will land an hour later: ~1:00 PM
+# and ~8:00 PM instead. A ~1hr twice-a-year drift, not worth
+# compensating for a friend-group app.
+[triggers]
+crons = ["0 17 * * *", "0 0 * * *"]
